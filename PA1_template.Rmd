@@ -1,0 +1,149 @@
+---
+title: "PA1_template"
+author: "Soumava Dey"
+date: "July 30, 2018"
+output: html_document
+---
+## Loading and preprocessing the data
+
+Load the data using read.csv() function
+
+```{r setup, echo=TRUE}
+
+setwd("C:/Users/soudey/Documents/Data Science/RepData_courseassignment1")
+
+activity_dataset <- read.csv("activity.csv")
+
+head(activity_dataset)
+
+```
+
+
+
+## What is mean total number of steps taken per day?
+
+Calculate the total number of steps taken per day
+
+Make a histogram of the total number of steps taken each day
+
+```{r activity, echo=FALSE}
+library(ggplot2)
+
+activity_steps_day <- tapply(activity_dataset$steps,activity_dataset$date,sum,na.rm= TRUE)
+
+qplot(activity_steps_day,xlab="Steps per day", ylab="Frequency",col="Red",binwidth=500)
+
+```
+
+Calculate and report the mean and median of the total number of steps taken per day
+
+```{r mean_median, echo=TRUE}
+activity_steps_day_mean <- mean(activity_steps_day)
+activity_steps_day_median <- median(activity_steps_day) 
+
+head(activity_steps_day_mean)
+head(activity_steps_day_median)
+
+```
+
+## What is the average daily activity pattern?
+
+Make a time series plot
+
+```{r time_series, echo=FALSE}
+
+time_series <- aggregate(x = list(meansteps=activity_dataset$steps), by=list(meaninterval = activity_dataset$interval), FUN = mean, na.rm = TRUE)
+
+ggplot(time_series, aes(x = meaninterval, y = meansteps)) +
+  geom_line() +
+  xlab("5-minute interval") +
+  ylab("No. Of steps")
+
+```
+
+
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r max_steps, echo=FALSE}
+
+
+max_interval<- which.max(as.numeric(time_series$meansteps))
+
+head(max_interval)
+
+```
+
+##Imputing missing values 
+
+Calculate the total number of missing values
+
+```{r missung_values, echo=FALSE}
+
+activity_NA <- sum(is.na(activity_dataset))
+
+head(activity_NA)
+
+```
+
+Devise a strategy to filling up all the missing values
+
+```{r missung_values_impute, echo=FALSE}
+
+library(Hmisc)
+
+activity_impute <- activity_dataset
+
+activity_impute$steps <- impute(activity_dataset$steps, fun=mean)
+
+```
+
+Make a histogram of the total number of steps taken each day (imputed data)
+
+```{r activity_imputed, echo=FALSE}
+activity_steps_day_imputed <- tapply(activity_impute$steps,activity_dataset$date,sum)
+
+qplot(activity_steps_day_imputed,xlab="Steps per day(imputed)",ylab="Frequency",col="Red",binwidth=500)
+
+```
+
+
+Mean and median of steps based on imputed data
+
+```{r imputed mean_median, echo=TRUE}
+activity_steps_day_mean_imputed <- mean(activity_steps_day_imputed)
+activity_steps_day_median_imputed <- median(activity_steps_day_imputed) 
+
+head(activity_steps_day_mean_imputed)
+head(activity_steps_day_median_imputed)
+
+```
+
+##Are there differences in activity patterns between weekdays and weekends?
+
+```{r weekday_weekend_pattern, echo=FALSE}
+activity_impute$date <- as.Date(activity_impute$date )
+#create a vector of weekdays
+weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+#Use `%in%` and `weekdays` to create a logical vector
+#convert to `factor` and specify the `levels/labels`
+activity_impute$wDay <- factor((weekdays(activity_impute$date) %in% weekdays1), 
+         levels=c(FALSE, TRUE), labels=c('weekend', 'weekday')) 
+#Or
+activity_impute$wDay <- c('weekend', 'weekday')[(weekdays(activity_impute$date) %in% weekdays1)+1L]
+
+averagedActivityDataImputed <- aggregate(steps ~ interval + wDay, data=activity_impute, mean)
+
+ggplot(averagedActivityDataImputed, aes(interval, steps)) + 
+    geom_line() + 
+    facet_grid(wDay ~.) +
+    xlab("5-minute interval") + 
+    ylab("avarage number of steps")
+
+
+```
+
+
+
+
+
